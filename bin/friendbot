@@ -1,0 +1,115 @@
+#!/bin/bash
+
+echo "
+     ;    
+    [\"]    
+   /[_]\  
+    ] [   friendbot
+"
+
+BOT_DIR="/home/agoldin/friendbot"
+BOT_DB="/home/agoldin/friendbot/friendbot_db.sqlite3"
+BOT_LOG_DIR=$BOT_DIR/log
+BOT_PLUGIN_DIR=$BOT_DIR/src/plugins
+BOT_START=$BOT_DIR/bin/limbo
+
+RETVAL=0
+
+ #stop the current processes
+stop() {
+    get_pids
+
+    if [[ -n $PID_OF_BOT_START ]]; then
+        echo "Stopping limbo (pid $PID_OF_BOT_START)..."
+        execute "kill -9 $PID_OF_BOT_START"
+    fi
+}
+
+ #get the status
+status() {
+    get_pids
+
+    if [[ -n $PID_OF_BOT_START ]]; then
+        echo "limbo (pid $PID_OF_BOT_START) is running..."
+    fi
+    if [[ -z $PID_OF_BOT_START ]]; then
+        echo "Nothing is running now"
+    fi
+}
+
+# update the branch
+update() {
+    cd $BOT_DIR
+
+    # change the file owner to the current user
+    execute "sudo chown -R $(whoami) ."
+
+    # update the branch
+    execute "git pull --ff-only origin HEAD"
+    execute "git submodule update --init --recursive --force"
+
+    # change the owner to root
+    execute "sudo chown -R root ."
+}
+
+# start processes
+start() {
+    get_pids
+
+    if [[ -n $PID_OF_BOT_START ]]; then
+        echo "limbo (pid $PID_OF_BOT_START) is already running..."
+    else
+        # TODO: move this into a config file
+        export SLACK_TOKEN=xoxb-37340183957-71gVcqugXOjUwD0v47VTmyjz
+        export LIMBO_LOGFILE=$BOT_LOG_DIR/bot_log.info
+        export LIMBO_DB=$BOT_DB
+        execute "nohup $BOT_START -pp $BOT_PLUGIN_DIR -d $BOT_DB &>/dev/null &"
+    fi
+}
+
+# execute a command, exit if the command fails
+execute() {
+    if [[ $# -eq 0 ]]; then
+        return
+    fi
+    cmd="$*"
+    echo "$cmd"
+    eval $cmd
+    RETVAL=$?
+    if [[ ! $RETVAL -eq 0 ]]; then
+        exit $RETVAL
+    fi
+}
+
+# get process ids of components 
+get_pids() {
+    PID_OF_BOT_START=$(ps ax | grep $BOT_START | grep -v grep | sed 's/^ *//' | cut -d' ' -f1 | xargs)
+}
+
+# how the script is called
+case "$1" in
+    start)
+        start
+        status
+        ;;
+    stop)
+        stop
+        status
+        ;;
+    status)
+        status
+        ;;
+    restart)
+        stop
+        start
+        status
+        ;;
+    update)
+        update
+        ;;
+    *)
+        echo "Usage: friendbot {start|stop|status|restart|update}"
+        ;;
+esac
+
+exit $RETVAL
