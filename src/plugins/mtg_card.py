@@ -53,3 +53,4 @@ def on_message(msg, server):
 
     slack = Slack(msg, server)
     slack.api_postmessage(text="Magic card(s):", attachments=attachments)
+    return
