@@ -59,8 +59,18 @@ start() {
     if [[ -n $PID_OF_BOT_START ]]; then
         echo "limbo (pid $PID_OF_BOT_START) is already running..."
     else
+        # check that virualenv is active
+        if [ ! -n "$VIRTUAL_ENV" ]; then
+            # if not active, check that virtualenv exists in directory
+            if [ ! -n "$BOT_DIR/.venv/bin/activate" ]; then
+                echo "virtualenv not set up, please run bin/setup"
+                exit 1
+            fi
+            # activate virtualenv
+            source $BOT_DIR/.venv/bin/activate
+        fi
         # TODO: move this into a config file
-        export SLACK_TOKEN=xoxb-37340183957-71gVcqugXOjUwD0v47VTmyjz
+        export SLACK_TOKEN=$(cat $BOT_DIR/slacktoken)
         export LIMBO_LOGFILE=$BOT_LOG_DIR/bot_log.info
         export LIMBO_DB=$BOT_DB
         execute "nohup $BOT_START -pp $BOT_PLUGIN_DIR -d $BOT_DB &>/dev/null &"

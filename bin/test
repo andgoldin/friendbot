@@ -14,5 +14,4 @@ if [ ! -n "$VIRTUAL_ENV" ]; then
 fi
 
 # set pythonpath and run the CLI
-export PYTHONPATH=$PYTHONPATH:$DIR/blackops_common/src
 $DIR/bin/cli -pp $DIR/src/plugins

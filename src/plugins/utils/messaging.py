@@ -47,7 +47,6 @@ class Slack(object):
             "username": "friendbot",
             "icon_emoji": ":cat:",
             "token": self.server.slack.token,
-            #"token": "xoxp-36640528672-36814676500-37336105063-b0966e49b0",
             "channel": channel
         }
         if text:
