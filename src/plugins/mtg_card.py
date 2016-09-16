@@ -15,7 +15,7 @@ import requests, re
 from utils.messaging import create_reply, Slack
 from utils.formatting import italics, bold, codeblock, link
 
-CARD_DB_ENDPOINT = "http://api.deckbrew.com/mtg/cards"
+CARD_DB_ENDPOINT = "http://api.deckbrew.com/mtg/cards/typeahead"
 GATHERER_IMAGE_URL = "http://gatherer.wizards.com/Handlers/Image.ashx?type=card&multiverseid="
 GATHERER_INFO_URL = "http://gatherer.wizards.com/Pages/Card/Details.aspx?multiverseid="
 
@@ -24,16 +24,17 @@ def get_card(query):
         "fallback": "Could not display card information",
         "mrkdwn_in": ["text", "pretext", "fields"]
     }
-    params = {"name": query}
+    params = {"q": query}
     card_data = requests.get(CARD_DB_ENDPOINT, params=params).json()
     if not card_data:
         result["text"] = "No card found matching _*" + query + "*_."
         return result
     card = card_data[0]
-    gatherer_link = link(GATHERER_INFO_URL + str(card["editions"][-1]["multiverse_id"]), card["name"])
+    non_zero_ids = [edition for edition in card["editions"] if edition["multiverse_id"] != 0]
+    gatherer_link = link(GATHERER_INFO_URL + str(non_zero_ids[-1]["multiverse_id"]), card["name"])
     tcgplayer_link = link(card["store_url"], "TCGplayer")
     result["text"] = bold(italics(gatherer_link)) + "  //  " + tcgplayer_link
-    result["image_url"] = card["editions"][-1]["image_url"]
+    result["image_url"] = non_zero_ids[-1]["image_url"]
     return result
 
 def on_message(msg, server):
